@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import SearchBox from "../SearchBox";
 import ContextualMenu from "../ContextualMenu";
 import FilterPanelSection from "./FilterPanelSection";
+import Chip from "../Chip";
 
 import "./SearchAndFilter.scss";
 
@@ -11,9 +12,10 @@ const SearchAndFilter = ({
   externallyControlled = false,
   onChange,
   filterPanelData,
+  searchData,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterPanelHidden, setFilterPanelHidden] = useState(true);
+  const [filterPanelHidden, setFilterPanelHidden, setUserData] = useState(true);
   const filterPanelRef = useRef();
 
   const searchOnChange = (searchTerm) => {
@@ -30,6 +32,10 @@ const SearchAndFilter = ({
       setFilterPanelHidden(true);
     };
 
+    const createChip = () => {
+      setUserData(searchTerm);
+    };
+
     const mouseDown = (e) => {
       // Check if click is outside of filter panel
       if (!filterPanelRef?.current?.contains(e.target)) {
@@ -43,6 +49,10 @@ const SearchAndFilter = ({
         // Close panel if Esc keydown detected
         closePanel();
       }
+
+      if (e.code === "Enter") {
+        createChip();
+      }
     };
 
     // Add listener on document to capture click events
@@ -54,19 +64,28 @@ const SearchAndFilter = ({
       document.removeEventListener("mousedown", mouseDown);
       document.removeEventListener("keydown", keyDown);
     };
-  }, []);
+  }, [searchTerm]);
 
   return (
     <div className="search-and-filter">
-      <SearchBox
-        autocomplete="off"
-        externallyControlled={externallyControlled}
-        placeholder="Search and filter"
-        onChange={(searchTerm) => searchOnChange(searchTerm)}
-        onClick={() => setFilterPanelHidden(false)}
-        onFocus={() => setFilterPanelHidden(false)}
-        value={searchTerm}
-      />
+      <div className="search-and-fitler__search-container">
+        {searchData?.chips?.map((chip) => (
+          <Chip
+            lead={chip.lead}
+            value={chip.value}
+            key={`search-${chip.lead}+${chip.value}`}
+          />
+        ))}
+        <SearchBox
+          autocomplete="off"
+          externallyControlled={externallyControlled}
+          placeholder="Search and filter"
+          onChange={(searchTerm) => searchOnChange(searchTerm)}
+          onClick={() => setFilterPanelHidden(false)}
+          onFocus={() => setFilterPanelHidden(false)}
+          value={searchTerm}
+        />
+      </div>
       {filterPanelData && (
         <div
           className="search-and-filter__panel"
@@ -90,6 +109,17 @@ const SearchAndFilter = ({
 
 SearchAndFilter.propTypes = {
   externallyControlled: PropTypes.bool,
+  searchData: PropTypes.arrayOf(
+    PropTypes.shape({
+      chips: PropTypes.arrayOf(
+        PropTypes.shape({
+          id: PropTypes.number,
+          lead: PropTypes.string,
+          value: PropTypes.string,
+        })
+      ),
+    })
+  ),
   filterPanelData: PropTypes.arrayOf(
     PropTypes.shape({
       heading: PropTypes.string,
